@@ -164,3 +164,4 @@ cython_debug/
 /DL/data/cifar-10-batches-py
 /DL/data/FashionMNIST
 /NIR/data/sensor_graph
+/NIR/data
