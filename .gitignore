@@ -166,3 +166,4 @@ cython_debug/
 /NIR/data/sensor_graph
 DL/data/cifar-10-python.tar.gz
 DL/data/train_32x32.mat
+/NIR/data
