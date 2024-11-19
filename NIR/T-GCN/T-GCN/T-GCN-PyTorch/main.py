@@ -13,15 +13,6 @@ import utils.logging
 DATA_PATHS = {
     "shenzhen": {"feat": "data/sz_speed.csv", "adj": "data/sz_adj.csv"},
     "losloop": {"feat": "data/los_speed.csv", "adj": "data/los_adj.csv"},
-    "data0": {"feat": "data/subtraffic_0.csv", "adj": "data/subgraph_matrix_0.csv"},
-    "data1": {"feat": "data/subtraffic_1.csv", "adj": "data/subgraph_matrix_1.csv"},
-    "data2": {"feat": "data/subtraffic_2.csv", "adj": "data/subgraph_matrix_2.csv"},
-    "data3": {"feat": "data/subtraffic_3.csv", "adj": "data/subgraph_matrix_3.csv"},
-    "data4": {"feat": "data/subtraffic_4.csv", "adj": "data/subgraph_matrix_4.csv"},
-    "data5": {"feat": "data/subtraffic_5.csv", "adj": "data/subgraph_matrix_5.csv"},
-    "data6": {"feat": "data/subtraffic_6.csv", "adj": "data/subgraph_matrix_6.csv"},
-    "data7": {"feat": "data/subtraffic_7.csv", "adj": "data/subgraph_matrix_7.csv"},
-    "data8": {"feat": "data/subtraffic_8.csv", "adj": "data/subgraph_matrix_8.csv"},
 }
 
 
@@ -75,11 +66,9 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser = pl.Trainer.add_argparse_args(parser)
-
-    parser.add_argument("--fourier", type=bool, default=False)
-
+    
     parser.add_argument(
-        "--data", type=str, help="The name of the dataset", choices=("shenzhen", "losloop", "data0", "data1", "data2", "data3", "data4", "data5", "data6", "data7"), default="losloop"
+        "--data", type=str, help="The name of the dataset", choices=("shenzhen", "losloop"), default="losloop"
     )
     parser.add_argument(
         "--model_name",
