@@ -76,6 +76,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser = pl.Trainer.add_argparse_args(parser)
 
+    parser.add_argument("--fourier", type=bool, default=False)
+
     parser.add_argument(
         "--data", type=str, help="The name of the dataset", choices=("shenzhen", "losloop", "data0", "data1", "data2", "data3", "data4", "data5", "data6", "data7"), default="losloop"
     )
