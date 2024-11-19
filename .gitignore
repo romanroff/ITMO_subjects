@@ -164,3 +164,5 @@ cython_debug/
 /DL/data/cifar-10-batches-py
 /DL/data/FashionMNIST
 /NIR/data/sensor_graph
+DL/data/cifar-10-python.tar.gz
+DL/data/train_32x32.mat
