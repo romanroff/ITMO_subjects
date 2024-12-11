@@ -20,6 +20,55 @@ def filter_significant_features(X, y, significance_level):
     results_df['Significant'] = results_df['p-value'] < significance_level
     return results_df
 
+# Функция для создания лагов
+def create_lags(data, features, max_lag):
+    lagged_data = data.copy()
+    for feature in features:
+        for lag in range(1, max_lag + 1):
+            lagged_data[f"{feature}_lag{lag}"] = lagged_data[feature].shift(lag)
+    return lagged_data.dropna()
+
+# Функция для тюнинга по лагам
+def tune_lags(data, target_variable, features, max_lag):
+    best_rmse = np.inf
+    best_lags = {}
+
+    for feature in features:
+        for lag in range(0, max_lag + 1):
+            # Создаем лаги для текущего фактора
+            lagged_data = data.copy()
+            if lag > 0:
+                lagged_data[f"{feature}_lag{lag}"] = lagged_data[feature].shift(lag)
+            lagged_data = lagged_data.dropna()
+
+            # Разделяем данные на обучающую и тестовую выборки
+            split_index = int(len(lagged_data) * 0.8)
+            train_data = lagged_data.iloc[:split_index]
+            test_data = lagged_data.iloc[split_index:]
+
+            # Выбираем фичи для текущего лага
+            current_features = [f for f in features if f != feature] + ([f"{feature}_lag{lag}"] if lag > 0 else [feature])
+            X_train = train_data[current_features]
+            y_train = train_data[target_variable]
+            X_test = test_data[current_features]
+            y_test = test_data[target_variable]
+
+            # Добавляем константу и строим модель
+            X_train_const = sm.add_constant(X_train)
+            X_test_const = sm.add_constant(X_test)
+            model_sm = sm.OLS(y_train, X_train_const).fit()
+            y_pred = model_sm.predict(X_test_const)
+
+            # Вычисляем RMSE
+            rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+
+            # Обновляем лучшие параметры
+            if rmse < best_rmse:
+                best_rmse = rmse
+                best_lags = {feature: lag}
+
+    return best_lags, best_rmse
+
 # Интерфейс Streamlit
 st.title("Алгоритм ЛМФМ")
 
@@ -81,29 +130,33 @@ if uploaded_file:
         final_features = [f for f in significant_features if f not in excluded_features]
         st.write("Оставшиеся факторы:", final_features)
 
-        # Создание лаговых переменных
-        st.header("Создание лаговых переменных")
-        max_lag = st.slider("Выберите количество лагов (0-6):", 0, 6, 0)
+        # Тюнинг по лагам
+        st.header("Тюнинг по лагам")
+        max_lag = st.slider("Максимальное количество лагов (0-6):", 0, 6, 3)
 
         if max_lag > 0:
-            for feature in final_features:
-                for lag in range(1, max_lag + 1):
-                    data[f"{feature}_lag{lag}"] = data[feature].shift(lag)
-            lagged_features = [f"{feature}_lag{lag}" for feature in final_features for lag in range(1, max_lag + 1)]
-            lagged_data = data.dropna()
-        else:
-            lagged_features = final_features
-            lagged_data = data
+            best_lags, best_rmse = tune_lags(data, target_variable, final_features, max_lag)
+            st.write(f"Лучшие лаги: {best_lags}")
+            st.write(f"Минимальный RMSE: {best_rmse:.3f}")
 
-        train_data = lagged_data.iloc[:split_index]
-        test_data = lagged_data.iloc[split_index:]
+            # Применение лучших лагов
+            lagged_data = data.copy()
+            for feature, lag in best_lags.items():
+                if lag > 0:
+                    lagged_data[f"{feature}_lag{lag}"] = lagged_data[feature].shift(lag)
+            lagged_data = lagged_data.dropna()
 
-        # Построение модели
-        st.header("Построение модели")
-        X_train = train_data[lagged_features]
-        y_train = train_data[target_variable]
-        X_test = test_data[lagged_features]
-        y_test = test_data[target_variable]
+            train_data = lagged_data.iloc[:split_index]
+            test_data = lagged_data.iloc[split_index:]
+
+            # Построение модели
+            st.header("Построение модели")
+            lagged_features = [f"{feature}_lag{lag}" if lag > 0 else feature for feature, lag in best_lags.items()]
+            X_train = train_data[lagged_features]
+            y_train = train_data[target_variable]
+            X_test = test_data[lagged_features]
+            y_test = test_data[target_variable]
+
 
         # Добавление константы
         X_train_const = sm.add_constant(X_train)
