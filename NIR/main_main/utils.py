@@ -129,29 +129,49 @@ def betweenness_centrality_feature(adj_matrix):
 def eigenvector_centrality_feature(adj_matrix):
     """Собственный вектор центральности."""
     G = nx.from_numpy_array(adj_matrix)
-    return nx.eigenvector_centrality(G, max_iter=1000)
+    try:
+        return nx.eigenvector_centrality(G, max_iter=1000)
+    except nx.PowerIterationFailedConvergence:
+        print("Eigenvector centrality computation did not converge.")
+        return {node: 0 for node in G.nodes()}
 
 def edge_weight_feature(adj_matrix):
-    """Вес ребра."""
+    """Вес узлов, основанный на сумме весов инцидентных ребер."""
     G = nx.from_numpy_array(adj_matrix)
-    return {(u, v): data['weight'] for u, v, data in G.edges(data=True)}
+    node_weights = {node: 0 for node in G.nodes()}
+    for u, v, data in G.edges(data=True):
+        weight = data.get('weight', 1)  # Использовать вес из данных или 1 по умолчанию
+        node_weights[u] += weight
+        node_weights[v] += weight
+    return node_weights  # Возвращаем веса в виде словаря {node: weight}
 
 def shortest_path_length_feature(adj_matrix):
     """Расстояние между узлами."""
     G = nx.from_numpy_array(adj_matrix)
-    return dict(nx.shortest_path_length(G))
+    return {source: dict(lengths) for source, lengths in nx.shortest_path_length(G)}
 
 def graph_density_feature(adj_matrix):
-    """Плотность графа."""
+    """Плотность графа для каждого узла (глобальная плотность одинакова для всех узлов)."""
     G = nx.from_numpy_array(adj_matrix)
-    return nx.density(G)
+    density = nx.density(G)
+    nodes = G.nodes()
+    return {node: density for node in nodes}  # Одинаковая плотность для всех узлов
+
 
 def graph_diameter_feature(adj_matrix):
-    """Диаметр графа."""
+    """Диаметр графа. Возвращает значение для всех узлов, если граф связный."""
     G = nx.from_numpy_array(adj_matrix)
-    return nx.diameter(G)
+    if not nx.is_connected(G):
+        print("Graph is not connected; diameter is infinite.")
+        diameter = float('inf')
+    else:
+        diameter = nx.diameter(G)
+    nodes = G.nodes()
+    return {node: diameter for node in nodes}  # Одинаковый диаметр для всех узлов
+
 
 def clustering_coefficient_feature(adj_matrix):
-    """Коэффициент кластеризации."""
+    """Коэффициент кластеризации для каждого узла."""
     G = nx.from_numpy_array(adj_matrix)
-    return nx.average_clustering(G)
+    clustering = nx.clustering(G)  # Словарь с коэффициентами кластеризации для каждого узла
+    return clustering
